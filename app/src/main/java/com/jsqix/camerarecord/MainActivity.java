@@ -16,6 +16,7 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 import java.io.File;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
     private SurfaceView mCameraPreview;
@@ -39,6 +40,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private static final String TAG = "Jackie";
 
     private Handler mHandler = new Handler();
+    private int MINUTE_TO_MS = 60*1000;
+    private int HOUR_TO_MS = MINUTE_TO_MS*60;
+    private int HOURS = 1;
+    private int MINUTES = 2;
+    //10*60*60*1000 -> 10 hours
+    //private int MAX_DURATION = HOURS*HOUR_TO_MS;
+    private int MAX_DURATION = MINUTES*MINUTE_TO_MS;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +71,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onPause() {
         super.onPause();
+        Log.d(TAG, "onPause");
         if (mIsRecording) {
             stopRecording();
         }
@@ -72,6 +81,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onResume() {
         super.onResume();
+        Log.d(TAG, "onResume");
         startPreview();
     }
 
@@ -79,7 +89,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         @Override
         public void surfaceDestroyed(SurfaceHolder holder) {
+
             mIsSufaceCreated = false;
+            Log.d(TAG, "surfaceDestroyed");
         }
 
         @Override
@@ -104,12 +116,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mCamera = Camera.open(CAMERA_ID);
 
         Camera.Parameters parameters = mCamera.getParameters();
+        List<Camera.Size> videoSizes = parameters.getSupportedVideoSizes();
         Camera.Size size = getBestPreviewSize(1080, 1920, parameters);
         if (size != null) {
             parameters.setPreviewSize(size.width, size.height);
         }
 
-        parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+        //parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
         parameters.setPreviewFrameRate(20);
 
         //设置相机预览方向
@@ -187,9 +200,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT); // 设置音频的编码格式
         mRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264); // 设置视频的编码格式
         mRecorder.setVideoEncodingBitRate(3 * 1024 * 1024);// 设置视频编码的比特率
-        mRecorder.setVideoSize(1280, 720);  // 设置视频大小
+        //mRecorder.setVideoSize(1280, 720);  // 设置视频大小
+        mRecorder.setVideoSize(176, 144);  // 设置视频大小
         mRecorder.setVideoFrameRate(20); // 设置帧率
 //        mRecorder.setMaxDuration(10000); //设置最大录像时间为10s
+        mRecorder.setMaxDuration(MAX_DURATION);
+        mRecorder.setOnInfoListener(mInfoListener);
         mRecorder.setPreviewDisplay(mSurfaceHolder.getSurface());
 
         //设置视频存储路径
@@ -295,4 +311,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             mMinutePrefix.setVisibility(View.GONE);
         }
     }
+
+    private MediaRecorder.OnInfoListener mInfoListener = new MediaRecorder.OnInfoListener() {
+        /**
+         * Called to indicate an info or a warning during recording.
+         *
+         * @param mr   the MediaRecorder the info pertains to
+         * @param what the type of info or warning that has occurred
+         * <ul>
+         * <li>{@link #MEDIA_RECORDER_INFO_UNKNOWN}
+         * <li>{@link #MEDIA_RECORDER_INFO_MAX_DURATION_REACHED}
+         * <li>{@link #MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED}
+         * </ul>
+         * @param extra   an extra code, specific to the info type
+         */
+        @Override
+        public void onInfo(MediaRecorder mediaRecorder, int what, int extra) {
+            if(what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED){
+                Log.d(TAG,"max duration reached,try to stop record.");
+                if (mIsRecording) {
+                    stopRecording();
+                }
+            }
+        }
+    };
 }
