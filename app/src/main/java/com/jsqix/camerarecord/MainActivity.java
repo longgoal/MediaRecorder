@@ -45,8 +45,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private int HOURS = 1;
     private int MINUTES = 2;
     //10*60*60*1000 -> 10 hours
-    //private int MAX_DURATION = HOURS*HOUR_TO_MS;
-    private int MAX_DURATION = MINUTES*MINUTE_TO_MS;
+    private int MAX_DURATION = HOURS*HOUR_TO_MS;
+    //private int MAX_DURATION = MINUTES*MINUTE_TO_MS;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
