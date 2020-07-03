@@ -11,6 +11,7 @@ import android.media.CameraProfile;
 import android.media.MediaRecorder;
 import android.os.Environment;
 import android.os.IBinder;
+import android.os.storage.StorageManager;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.SurfaceHolder;
@@ -20,8 +21,12 @@ import android.view.WindowManager;
 //import java.text.DateFormat;
 import android.text.format.DateFormat;
 
+import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Date;
+import java.util.List;
 
 public class BackgroundVideoRecorder extends Service implements SurfaceHolder.Callback {
     private final static String TAG = "bgRecSvc";
@@ -36,11 +41,13 @@ public class BackgroundVideoRecorder extends Service implements SurfaceHolder.Ca
     private boolean mIsRecording = false;
     private int MINUTE_TO_MS = 60*1000;
     private int HOUR_TO_MS = MINUTE_TO_MS*60;
-    private int HOURS = 6;
+    private int HOURS = 20;
     private int MINUTES = 1;
     //10*60*60*1000 -> 10 hours
     private int MAX_DURATION = HOURS*HOUR_TO_MS;
     //private int MAX_DURATION = MINUTES*MINUTE_TO_MS;
+
+    private StorageManager mStorageManager;
     @Override
     public void onCreate() {
         Log.d(TAG,"onCreate");
@@ -107,7 +114,7 @@ public class BackgroundVideoRecorder extends Service implements SurfaceHolder.Ca
             mediaRecorder.setCamera(camera);
             mediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
             mediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
-            mediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_QCIF));
+            mediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_720P));
 
         } else {
 
@@ -120,7 +127,7 @@ public class BackgroundVideoRecorder extends Service implements SurfaceHolder.Ca
             mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264); // 设置视频的编码格式
             mediaRecorder.setVideoEncodingBitRate(3 * 1024 * 1024);// 设置视频编码的比特率
             //mRecorder.setVideoSize(1280, 720);  // 设置视频大小
-            mediaRecorder.setVideoSize(176, 144);  // 设置视频大小
+            mediaRecorder.setVideoSize(1280, 720);  // 设置视频大小
             mediaRecorder.setVideoFrameRate(20); // 设置帧率
 //        mRecorder.setMaxDuration(10000); //设置最大录像时间为10s
             mediaRecorder.setMaxDuration(MAX_DURATION);
@@ -128,15 +135,21 @@ public class BackgroundVideoRecorder extends Service implements SurfaceHolder.Ca
             mediaRecorder.setPreviewDisplay(holder.getSurface());
 
         }
+        String sdCardPath = getSdCardPath(this);
+
         String state = Environment.getExternalStorageState();
         String name = DateFormat.format("yyyy-MM-dd_kk-mm-ss",new Date().getTime())+".mp4";
         String path;
-        if(Environment.MEDIA_MOUNTED.equals(state)) {
-            path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)+"/"+name;
-        } else {
-            path = getFilesDir().getAbsolutePath()+"/"+name;
+        if(sdCardPath != null && sdCardPath.length() > 0) {
+            path = sdCardPath + "/"+Environment.DIRECTORY_MOVIES+"/"+name;
         }
-
+        else {
+            if (Environment.MEDIA_MOUNTED.equals(state)) {
+                path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES) + "/" + name;
+            } else {
+                path = getFilesDir().getAbsolutePath() + "/" + name;
+            }
+        }
         Log.d(TAG,"outfile path="+path);
         mediaRecorder.setOutputFile(path);
         try {
@@ -182,4 +195,78 @@ public class BackgroundVideoRecorder extends Service implements SurfaceHolder.Ca
             }
         }
     };
+    private String getSdCardPath(Context context) {
+
+        int TYPE_PUBLIC = 0;
+
+        File file = null;
+
+        String path = null;
+
+        //StorageManager mStorageManager = getSystemService(StorageManager.class);
+        mStorageManager = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
+
+        Class<?> mVolumeInfo = null;
+        try {
+            mVolumeInfo = Class.forName("android.os.storage.VolumeInfo");
+
+
+            Method getVolumes = mStorageManager.getClass().getMethod(
+                    "getVolumes");
+
+
+            Method volType = mVolumeInfo.getMethod("getType");
+
+            Method isMount = mVolumeInfo.getMethod("isMountedReadable");
+
+            Method getPath = mVolumeInfo.getMethod("getPath");
+
+            List<Object> mListVolumeinfo = (List<Object>) getVolumes
+                    .invoke(mStorageManager);
+
+
+
+            Log.d("getSdCardPath", "mListVolumeinfo.size="+mListVolumeinfo.size());
+
+            for (int i = 0; i < mListVolumeinfo.size(); i++) {
+
+                int mType = (Integer) volType.invoke(mListVolumeinfo.get(i));
+
+                Log.d("getSdCardPath", "mType=" + mType);
+
+                if (mType == TYPE_PUBLIC) {
+                    boolean misMount = (Boolean) isMount.invoke(mListVolumeinfo.get(i));
+                    Log.d("getSdCardPath", "misMount=" + misMount);
+                    if (misMount) {
+                        file = (File) getPath.invoke(mListVolumeinfo.get(i));
+                        if (file != null) {
+                            path = file.getAbsolutePath();
+                            Log.d("getSdCardPath", "path=" + path);
+                            return path;
+                        }
+                    }
+                }
+
+            }
+
+        } catch (ClassNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        return "";
+    }
+
 }
