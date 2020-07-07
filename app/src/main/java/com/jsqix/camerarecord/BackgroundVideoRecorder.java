@@ -46,7 +46,10 @@ public class BackgroundVideoRecorder extends Service implements SurfaceHolder.Ca
     //10*60*60*1000 -> 10 hours
     private int MAX_DURATION = HOURS*HOUR_TO_MS;
     //private int MAX_DURATION = MINUTES*MINUTE_TO_MS;
-
+    private long ONE_K = 1024l;
+    private long ONE_M = ONE_K*1024l;
+    private long ONE_G = ONE_M*1024l;
+    private long MAX_FILESIZE = 10*ONE_G;
     private StorageManager mStorageManager;
     @Override
     public void onCreate() {
@@ -131,6 +134,7 @@ public class BackgroundVideoRecorder extends Service implements SurfaceHolder.Ca
             mediaRecorder.setVideoFrameRate(20); // 设置帧率
 //        mRecorder.setMaxDuration(10000); //设置最大录像时间为10s
             mediaRecorder.setMaxDuration(MAX_DURATION);
+            mediaRecorder.setMaxFileSize(MAX_FILESIZE);
             mediaRecorder.setOnInfoListener(mInfoListener);
             mediaRecorder.setPreviewDisplay(holder.getSurface());
 
@@ -186,8 +190,12 @@ public class BackgroundVideoRecorder extends Service implements SurfaceHolder.Ca
          */
         @Override
         public void onInfo(MediaRecorder mediaRecorder, int what, int extra) {
-            if(what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED){
-                Log.d(TAG,"max duration reached,try to stop record.");
+            if((what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED)
+            ||(what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED)){
+                if(what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED)
+                    Log.d(TAG,"max duration reached,try to stop record.");
+                else
+                    Log.d(TAG,"max file size reached,try to stop record.");
                 if (mIsRecording) {
                     stopRecord();
                     stopSelf();
