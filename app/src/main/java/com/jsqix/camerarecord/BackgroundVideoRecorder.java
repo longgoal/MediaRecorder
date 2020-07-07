@@ -49,7 +49,7 @@ public class BackgroundVideoRecorder extends Service implements SurfaceHolder.Ca
     private long ONE_K = 1024l;
     private long ONE_M = ONE_K*1024l;
     private long ONE_G = ONE_M*1024l;
-    private long MAX_FILESIZE = 10*ONE_G;
+    private long MAX_FILESIZE = 20*ONE_G;
     private StorageManager mStorageManager;
     @Override
     public void onCreate() {
