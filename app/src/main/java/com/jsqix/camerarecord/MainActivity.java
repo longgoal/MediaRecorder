@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
         mWakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, TAG);
         mCameraPreview = (ResizeAbleSurfaceView) findViewById(R.id.camera_preview);
-        mCameraPreview.resize(960,576);
+        //mCameraPreview.resize(960,576);
         mMinutePrefix = (TextView) findViewById(R.id.timestamp_minute_prefix);
         mMinuteText = (TextView) findViewById(R.id.timestamp_minute_text);
         mSecondPrefix = (TextView) findViewById(R.id.timestamp_second_prefix);
@@ -137,12 +137,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (size != null) {
             parameters.setPreviewSize(size.width, size.height);
         }
-        parameters.setPreviewSize(960, 288);
+        //parameters.setPreviewSize(960, 288);
         //parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
         parameters.setPreviewFrameRate(20);
 
         //设置相机预览方向
-        mCamera.setDisplayOrientation(0);
+        mCamera.setDisplayOrientation(90);
 
         mCamera.setParameters(parameters);
 
@@ -209,7 +209,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mCamera.unlock();
         //给Recorder设置Camera对象，保证录像跟预览的方向保持一致
         mRecorder.setCamera(mCamera);
-        mRecorder.setOrientationHint(0);  //改变保存后的视频文件播放时是否横屏(不加这句，视频文件播放的时候角度是反的)
+        mRecorder.setOrientationHint(90);  //改变保存后的视频文件播放时是否横屏(不加这句，视频文件播放的时候角度是反的)
         mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC); // 设置从麦克风采集声音
         mRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA); // 设置从摄像头采集图像
         mRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);  // 设置视频的输出格式 为MP4
@@ -217,7 +217,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264); // 设置视频的编码格式
         mRecorder.setVideoEncodingBitRate(3 * 1024 * 1024);// 设置视频编码的比特率
         //mRecorder.setVideoSize(1280, 720);  // 设置视频大小
-        mRecorder.setVideoSize(960, 288);  // 设置视频大小
+        mRecorder.setVideoSize(176, 144);  // 设置视频大小
         mRecorder.setVideoFrameRate(20); // 设置帧率
 //        mRecorder.setMaxDuration(10000); //设置最大录像时间为10s
         mRecorder.setMaxDuration(MAX_DURATION);
