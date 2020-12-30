@@ -18,6 +18,8 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -28,7 +30,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView mMinuteText;
     private TextView mSecondPrefix;
     private TextView mSecondText;
-
+    //720p
+//    private int PREVIEW_WIDTH = 1280;
+//    private int PREVIEW_HEIGHT = 720;
+//    private int VIDEO_WIDTH = 1280;
+//    private int VIDEO_HEITHG = 720;
+//    private int SURFACEVIEW_WIDTH = 720;
+//    private int SURFACEVIEW_HEIGHT = 1280;
+    //1080p
+//    private int PREVIEW_WIDTH = 1920;
+//    private int PREVIEW_HEIGHT = 1080;
+//    private int VIDEO_WIDTH = 1920;
+//    private int VIDEO_HEITHG = 1080;
+//    private int SURFACEVIEW_WIDTH = 720;
+//    private int SURFACEVIEW_HEIGHT = 1280;
+    //640x480
+    private int PREVIEW_WIDTH = 640;
+    private int PREVIEW_HEIGHT = 480;
+    private int VIDEO_WIDTH = 640;
+    private int VIDEO_HEITHG = 480;
+    private int SURFACEVIEW_WIDTH = 480;
+    private int SURFACEVIEW_HEIGHT = 640;
     private String lastFileName;
 
     private Camera mCamera;
@@ -49,7 +71,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     //10*60*60*1000 -> 10 hours
     private int MAX_DURATION = HOURS*HOUR_TO_MS;
     //private int MAX_DURATION = MINUTES*MINUTE_TO_MS;
-
+    private static final int CAMERA_HAL_API_VERSION_1_0 = 0x100;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,14 +85,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                         | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION // hide nav bar
                         | View.SYSTEM_UI_FLAG_FULLSCREEN // hide status bar
-                        | View.SYSTEM_UI_FLAG_IMMERSIVE
+                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
         );
 
         setContentView(R.layout.activity_main);
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
         mWakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, TAG);
         mCameraPreview = (ResizeAbleSurfaceView) findViewById(R.id.camera_preview);
-        //mCameraPreview.resize(960,576);
+        mCameraPreview.resize(SURFACEVIEW_WIDTH,SURFACEVIEW_HEIGHT);
         mMinutePrefix = (TextView) findViewById(R.id.timestamp_minute_prefix);
         mMinuteText = (TextView) findViewById(R.id.timestamp_minute_text);
         mSecondPrefix = (TextView) findViewById(R.id.timestamp_second_prefix);
@@ -128,8 +150,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             Log.d(TAG, "startPreview will return");
             return;
         }
-
-        mCamera = Camera.open(CAMERA_ID);
+        /*可能有些系统有限制就要只能在运行时候用反射进行调用*/
+        try {
+            Method openMethod = Class.forName("android.hardware.Camera").getMethod(
+                    "openLegacy", int.class, int.class);
+            mCamera = (Camera) openMethod.invoke(null, CAMERA_ID, CAMERA_HAL_API_VERSION_1_0);
+        } catch (Exception e) {
+            mCamera = Camera.open(CAMERA_ID);
+        }
+        //mCamera = Camera.open(CAMERA_ID);
 
         Camera.Parameters parameters = mCamera.getParameters();
         List<Camera.Size> videoSizes = parameters.getSupportedVideoSizes();
@@ -137,12 +166,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (size != null) {
             parameters.setPreviewSize(size.width, size.height);
         }
-        //parameters.setPreviewSize(960, 288);
+        parameters.setPreviewSize(PREVIEW_WIDTH, PREVIEW_HEIGHT);
         //parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
         parameters.setPreviewFrameRate(20);
 
         //设置相机预览方向
-        mCamera.setDisplayOrientation(90);
+        mCamera.setDisplayOrientation(0);
 
         mCamera.setParameters(parameters);
 
@@ -159,11 +188,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void stopPreview() {
         //释放Camera对象
         if (mCamera != null) {
-            try {
-                mCamera.setPreviewDisplay(null);
-            } catch (Exception e) {
-                Log.e(TAG, e.getMessage());
-            }
+//            try {
+//                mCamera.setPreviewDisplay(null);
+//            } catch (Exception e) {
+//                Log.e(TAG, e.getMessage());
+//            }
 
             mCamera.stopPreview();
             mCamera.release();
@@ -209,7 +238,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mCamera.unlock();
         //给Recorder设置Camera对象，保证录像跟预览的方向保持一致
         mRecorder.setCamera(mCamera);
-        mRecorder.setOrientationHint(90);  //改变保存后的视频文件播放时是否横屏(不加这句，视频文件播放的时候角度是反的)
+        mRecorder.setOrientationHint(0);  //改变保存后的视频文件播放时是否横屏(不加这句，视频文件播放的时候角度是反的)
         mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC); // 设置从麦克风采集声音
         mRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA); // 设置从摄像头采集图像
         mRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);  // 设置视频的输出格式 为MP4
@@ -217,12 +246,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264); // 设置视频的编码格式
         mRecorder.setVideoEncodingBitRate(3 * 1024 * 1024);// 设置视频编码的比特率
         //mRecorder.setVideoSize(1280, 720);  // 设置视频大小
-        mRecorder.setVideoSize(176, 144);  // 设置视频大小
-        mRecorder.setVideoFrameRate(20); // 设置帧率
+        mRecorder.setVideoSize(VIDEO_WIDTH, VIDEO_HEITHG);  // 设置视频大小
+        mRecorder.setVideoFrameRate(30); // 设置帧率
 //        mRecorder.setMaxDuration(10000); //设置最大录像时间为10s
         mRecorder.setMaxDuration(MAX_DURATION);
         mRecorder.setOnInfoListener(mInfoListener);
         mRecorder.setPreviewDisplay(mSurfaceHolder.getSurface());
+
 
         //设置视频存储路径
         File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES) + File.separator + "VideoRecorder");
