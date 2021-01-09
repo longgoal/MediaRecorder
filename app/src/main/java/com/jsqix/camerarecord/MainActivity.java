@@ -45,12 +45,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //    private int SURFACEVIEW_WIDTH = 720;
 //    private int SURFACEVIEW_HEIGHT = 1280;
     //640x480
-    private int PREVIEW_WIDTH = 640;
-    private int PREVIEW_HEIGHT = 480;
-    private int VIDEO_WIDTH = 640;
-    private int VIDEO_HEITHG = 480;
-    private int SURFACEVIEW_WIDTH = 480;
-    private int SURFACEVIEW_HEIGHT = 640;
+//    private int PREVIEW_WIDTH = 640;
+//    private int PREVIEW_HEIGHT = 480;
+//    private int VIDEO_WIDTH = 640;
+//    private int VIDEO_HEITHG = 480;
+//    private int SURFACEVIEW_WIDTH = 480;
+//    private int SURFACEVIEW_HEIGHT = 640;
+    //960x576
+    private int PREVIEW_WIDTH = 960;
+    private int PREVIEW_HEIGHT = 576;
+    private int VIDEO_WIDTH = 960;
+    private int VIDEO_HEITHG = 576;
+    private int SURFACEVIEW_WIDTH = 960;
+    private int SURFACEVIEW_HEIGHT = 576;
     private String lastFileName;
 
     private Camera mCamera;
@@ -247,7 +254,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mRecorder.setVideoEncodingBitRate(3 * 1024 * 1024);// 设置视频编码的比特率
         //mRecorder.setVideoSize(1280, 720);  // 设置视频大小
         mRecorder.setVideoSize(VIDEO_WIDTH, VIDEO_HEITHG);  // 设置视频大小
-        mRecorder.setVideoFrameRate(30); // 设置帧率
+        mRecorder.setVideoFrameRate(25); // 设置帧率
 //        mRecorder.setMaxDuration(10000); //设置最大录像时间为10s
         mRecorder.setMaxDuration(MAX_DURATION);
         mRecorder.setOnInfoListener(mInfoListener);
